@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Text, View, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, Image, StyleSheet, StatusBar } from 'react-native';
 import { useState } from 'react';
 import { useSession } from '@/context/AuthContext';
 
@@ -19,28 +19,31 @@ export default function SignIn() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* <Image source={require('@/assets/logo.png')} style={styles.logo} /> Logo image */}
-      <Text style={styles.title}>Welcome Back</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#aaa"
-        value={username}
-        onChangeText={setUsername}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#aaa"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-        <Text style={styles.buttonText}>Sign In</Text> 
-      </TouchableOpacity>
-    </View>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+      <View style={styles.container}>
+        <Image source={require('@/assets/images/react-logo.png')} style={styles.logo} />
+        <Text style={styles.title}>Welcome Back</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor="#aaa"
+          value={username}
+          onChangeText={setUsername}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#aaa"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+          <Text style={styles.buttonText}>Sign In</Text> 
+        </TouchableOpacity>
+      </View>
+    </>
   );
 }
 
