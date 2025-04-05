@@ -32,7 +32,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = async (username: string, password: string) => {
     try {
       // Perform the login API request
-      const response = await fetch('http://172.16.3.54:8000/login', {
+      const response = await fetch('http://192.168.11.102:8000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -47,14 +47,16 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
       const data = await response.json();
       const sessionToken = data.access_token; // Adjust based on your backend response
+      console.log("login",sessionToken);
       setSession(sessionToken);
     } catch (error) {
       console.error('SignIn failed:', error);
     }
   };
 
-  const signOut = () => {
-    setSession(null);
+  const signOut = async () => {
+    await setSession(null);
+    console.log("session_Logout:",session);
   };
 
   return (

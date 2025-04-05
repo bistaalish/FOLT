@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Text, View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { useSession } from '@/context/AuthContext';
 
@@ -8,9 +8,9 @@ export default function SignIn() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (username && password) {
-      signIn(username, password);
+      await signIn(username, password);
       // Navigate after signing in. You may want to ensure sign-in is successful before navigating.
       router.replace('/');
     } else {
@@ -20,6 +20,7 @@ export default function SignIn() {
 
   return (
     <View style={styles.container}>
+      {/* <Image source={require('@/assets/logo.png')} style={styles.logo} /> Logo image */}
       <Text style={styles.title}>Welcome Back</Text>
       <TextInput
         style={styles.input}
@@ -37,9 +38,8 @@ export default function SignIn() {
         onChangeText={setPassword}
       />
       <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-        <Text style={styles.buttonText}>Sign In</Text>
+        <Text style={styles.buttonText}>Sign In</Text> 
       </TouchableOpacity>
-      <Text style={styles.footer}>Don't have an account? <Text style={styles.link}>Sign Up</Text></Text>
     </View>
   );
 }
@@ -51,6 +51,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#121212', // Dark background
     padding: 20,
+  },
+  logo: {
+    width: 120, // Logo width
+    height: 120, // Logo height
+    marginBottom: 40, // Space below logo
+    resizeMode: 'contain', // Ensures the logo scales proportionally
   },
   title: {
     fontSize: 30,
