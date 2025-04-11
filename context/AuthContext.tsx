@@ -31,11 +31,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signIn = async (username: string, password: string) => {
     try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
       // Perform the login API request
-      const response = await fetch('http://172.16.3.54:8000/login', {
+      const response = await fetch(`${apiUrl}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          
         },
         body: new URLSearchParams({ username, password }).toString(),
       });
@@ -55,8 +57,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   };
 
   const signOut = () => {
-    // setSession(null);
-    // console.log("session_Logout:",session);
+    setSession(null);
+    console.log("session_Logout:",session);
     
   };
 
