@@ -50,12 +50,15 @@ const TextInputComponent: React.FC<{
 const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId }) => {
   const [username, setUsername] = useState<string>('');
   const [isNativeVLANChecked, setIsNativeVLANChecked] = useState<boolean>(false);
-  const [vlans, setVlans] = useState<number[]>([]);
-  const [selectedVLAN, setSelectedVLAN] = useState<number | null>(null);
+  const [vlans, setVlans] = useState<any[]>([]);
+  const [selectedVLAN, setSelectedVLAN] = useState<any>(null);
   const [loadingVlans, setLoadingVlans] = useState<boolean>(false);
-  const { session, signOut } = useSession();
   const [checkingSN, setCheckingSN] = useState<boolean>(false);
-  const [LoadingText, setLoadingText] = useState<string>('Loading...');
+  const [loadingText, setLoadingText] = useState<string>('Loading...');
+  const { session } = useSession();
+
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
   const handleUsernameChange = useCallback((text: string) => {
     setUsername(text);
   }, []);
@@ -69,89 +72,83 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       alert('Please enter a username');
       return;
     }
+
+    if (!onu?.FSP || !onu?.SN || !selectedVLAN) {
+      alert('Missing ONU or VLAN data.');
+      return;
+    }
+
+    const parts = onu.FSP.split('/');
+    const interf = `${parts[0]}/${parts[1]}`;
+    const port = parts[2];
+
     const dataToAdd = {
       description: username,
       SN: onu.SN,
       FSP: onu.FSP,
       nativevlan: isNativeVLANChecked,
-      service_id: selectedVLAN.id
+      service_id: selectedVLAN.id,
+      interface: interf,
+      port,
     };
-    const parts = dataToAdd.FSP.split('/');
-    const interf =  `${parts[0]}/${parts[1]}`;
-    const port = parts[2]; // "1"
-    dataToAdd.interface = interf;
-    dataToAdd.port = port; // "1"
-    console.log('Data to add:', dataToAdd);
+
     try {
       setLoadingText('Checking if SN is already registered on OLT...');
-      setCheckingSN(true); // 🔄 Start loader
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  
-      const response = await fetch(`${apiUrl}/device/${oltId}/onu/search/sn`, {
+      setCheckingSN(true);
+
+      const checkRes = await fetch(`${apiUrl}/device/${oltId}/onu/search/sn`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sn: dataToAdd.SN }),
+        body: JSON.stringify({ sn: onu.SN }),
       });
-      if (response.ok) { 
-        setCheckingSN(false); // 🔄 Start loader
-        setCheckingSN(true); // 🔄 Start loader
-        setLoadingText('Deleting the sn...');
-        const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  
-        const Deleteresponse = await fetch(`${apiUrl}/device/${oltId}/onu/delete`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sn: dataToAdd.SN }),
-      });
+
+      if (checkRes.ok) {
+        setLoadingText('Deleting existing SN registration...');
+        await fetch(`${apiUrl}/device/${oltId}/onu/delete`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${session}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sn: onu.SN }),
+        });
       }
-      setLoadingText("Registering PON")
-      setCheckingSN(true); // 🔄 Start loader
-      const Addresponse = await fetch(`${apiUrl}/device/${oltId}/onu/add`, {
+
+      setLoadingText('Registering PON...');
+      const addRes = await fetch(`${apiUrl}/device/${oltId}/onu/add`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dataToAdd)
+        body: JSON.stringify(dataToAdd),
       });
+
+      if (!addRes.ok) {
+        const errData = await addRes.json();
+        throw new Error(errData?.message || 'Failed to register ONU');
+      }
+
       onAdd({
         username,
         vlan: selectedVLAN?.vlan || null,
         native: isNativeVLANChecked,
         onu,
       });
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   console.error('Failed to send SN:', errorData);
-      //   alert('Failed to send SN: ' + (errorData?.message || 'Unknown error'));
-      //   return;
-      // }
-  
-      // const responseData = await response.json();
-      // console.log('SN lookup response:', responseData);
-  
-      // Now you can proceed to call onAdd
-
-  
-    } catch (error) {
-      console.error('Error during SN post:', error);
-      alert('Network error while sending SN');
+    } catch (err) {
+      console.error('Error in handleAdd:', err);
+      alert(err.message || 'An unexpected error occurred.');
     } finally {
-      setCheckingSN(false); // 🔄 Stop loader
+      setCheckingSN(false);
     }
-
   };
 
   const fetchVLANs = async () => {
     setLoadingVlans(true);
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/device/${oltId}/services`, {
         method: 'GET',
         headers: {
@@ -160,11 +157,8 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
         },
       });
       const data = await response.json();
-      console.log('Fetched VLANs:', data);
-      const vlanList = data || [];
-      console.log("list",vlanList)
-      setVlans(vlanList);
-      if (vlanList.length > 0) setSelectedVLAN(vlanList[0]);
+      setVlans(data);
+      if (data.length > 0) setSelectedVLAN(data[0]);
     } catch (error) {
       console.error('Error fetching VLANs:', error);
     } finally {
@@ -184,11 +178,21 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
     <Modal visible={visible} onRequestClose={onClose} animationType="fade" transparent>
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{onu?.Model ?? 'ONU Details'}</Text>
-          <Text style={styles.modalText}>Number: {onu?.Number ?? 'N/A'}</Text>
-          <Text style={styles.modalText}>SN: {onu?.SN ?? 'N/A'}</Text>
-          <Text style={styles.modalText}>FSP: {onu?.FSP ?? 'N/A'}</Text>
-          <Text style={styles.modalText}>Vendor ID: {onu?.VendorID ?? 'N/A'}</Text>
+        <Text style={styles.cardLabel}>
+          <Text style={styles.label}>Number:</Text> {onu?.Number}
+        </Text>
+        <Text style={styles.cardLabel}>
+          <Text style={styles.label}>SN:</Text> {onu?.SN}
+        </Text>
+        <Text style={styles.cardLabel}>
+          <Text style={styles.label}>FSP:</Text> {onu?.FSP}
+        </Text>
+        <Text style={styles.cardLabel}>
+          <Text style={styles.label}>VendorID:</Text> {onu?.VendorID}
+        </Text>
+        <Text style={styles.cardLabel}>
+          <Text style={styles.label}>Model:</Text> {onu?.Model}
+        </Text>
 
           <View style={styles.checkboxContainer}>
             <Text style={styles.checkboxText}>Enable Native VLAN</Text>
@@ -207,8 +211,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
               selectedValue={selectedVLAN}
               style={styles.picker}
               onValueChange={(itemValue) => setSelectedVLAN(itemValue)}
-              dropdownIconColor="#fff" // For the dropdown arrow on Android
-              
+              dropdownIconColor="#fff"
             >
               {vlans.map((vlanObj) => (
                 <Picker.Item
@@ -219,13 +222,13 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
               ))}
             </Picker>
           )}
+          <TextInputComponent value={username} onChange={handleUsernameChange} />
           {checkingSN && (
             <View style={styles.checkingContainer}>
               <ActivityIndicator size="small" color="#1DB954" />
-              <Text style={styles.checkingText}>{LoadingText}</Text>
+              <Text style={styles.checkingText}>{loadingText}</Text>
             </View>
           )}
-          <TextInputComponent value={username} onChange={handleUsernameChange} />
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
@@ -329,11 +332,23 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   checkingText: {
-    color: '#ccc',
+    color: '#aaa',
     marginLeft: 10,
-    fontSize: 14,
   },
-  
+  cardLabel: {
+    color: '#eee',
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  label: {
+    color: '#1DB954',
+    fontWeight: 'bold',
+  },
+  vendorImage: {
+    width: 50,
+    height: 50,
+    marginLeft: 12,
+  },
 });
 
 export default ONUModal;
