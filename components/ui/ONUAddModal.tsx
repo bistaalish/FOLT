@@ -193,7 +193,6 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
         <Text style={styles.cardLabel}>
           <Text style={styles.label}>Model:</Text> {onu?.Model}
         </Text>
-
           <View style={styles.checkboxContainer}>
             <Text style={styles.checkboxText}>Enable Native VLAN</Text>
             <Switch
@@ -239,6 +238,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
             </TouchableOpacity>
           </View>
         </View>
+        
       </SafeAreaView>
     </Modal>
   );

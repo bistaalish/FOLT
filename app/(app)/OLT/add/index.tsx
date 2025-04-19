@@ -15,7 +15,7 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSession } from '@/context/AuthContext';
 import ONUCard from '@/components/ui/ONUCard';
 import ONUModal from '@/components/ui/ONUAddModal';
-
+import ONTRegisteredModal from '@/components/ui/CustomAlert'; // Import the new modal
 const vendorLogos: { [key: string]: any } = {
   hwtc: require('@/assets/images/vendors/hwtc.png'),
   // Add more logos as needed
@@ -26,11 +26,13 @@ const getVendorLogo = (vendorId?: string) => {
   return vendorLogos[vendorId.toLowerCase()] || vendorLogos['hwtc'];
 };
 
+
+
 export default function AddONU() {
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
   const navigation = useNavigation();
   const { session: token } = useSession();
-
+  const [showONTRegisteredModal, setShowONTRegisteredModal] = useState(false); // State for the "ONT Registered" modal
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -188,11 +190,20 @@ export default function AddONU() {
         onu={selectedONU}
         onClose={() => setModalVisible(false)}
         oltId={id}
-        onAdd={() => {
-          alert('ONU Added!');
+        onAdd={(username) => {
+          // alert('ONU Added!');
           setModalVisible(false);
+          selectedONU["username"] = username.username
+          setSelectedONU(selectedONU);
           handleAutoFind();
+          setShowONTRegisteredModal(true)
         }}
+      />
+       {/* ONT Registered Modal */}
+       <ONTRegisteredModal
+        visible={showONTRegisteredModal}
+        onu={selectedONU}
+        onClose={() => setShowONTRegisteredModal(false)}
       />
     </ScrollView>
   );

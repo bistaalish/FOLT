@@ -60,8 +60,15 @@ export default function OLTDetails() {
           style={[styles.actionCard, styles.searchCard]}
           activeOpacity={0.85}
           onPress={() => {
-            // Navigate to search page with id and name as params
-            navigation.push('/search', { id, name });
+            // Navigate to add page with id and name as params
+            router.push({
+              pathname: '/OLT/search',
+              params: {
+                id: id,
+                name: name,
+
+              },
+            });
           }}
         >
           <Feather name="search" size={28} color="#00FFC6" />
