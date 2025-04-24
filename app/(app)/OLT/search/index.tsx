@@ -1,180 +1,538 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-    View,
-    TextInput,
-    FlatList,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Animated,
-} from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Animated, Easing,ActivityIndicator,Modal } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useSession } from '@/context/AuthContext';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
+import useSNSearch from '@/hooks/useSNSearch';
+import useOpticalData from '@/hooks/useOpticalData';
+import DeleteModal from '@/components/ui/DeleteModal';
+import Spinner from '@/components/ui/spinner'; // Import the Spinner component
+import RebootModal from '@/components/ui/RebootModal';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 const SearchScreen = () => {
-    const { id } = useLocalSearchParams<{ id: string }>();
-    const [query, setQuery] = useState('');
-    const [searchType, setSearchType] = useState('SN');
-    const [results, setResults] = useState<any[]>([]);
-    const [hasSearched, setHasSearched] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const { session: token } = useSession();
+  const navigation = useNavigation();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [query, setQuery] = useState('');
+  const [searchType, setSearchType] = useState('SN');
+  const { session: token } = useSession();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isRebootingModalVisible, setIsRebootingModalVisible] = useState(false);
+  const [SearchingModal, setSearchingModal] = useState(false);
+  const [selectedSN, setSelectedSN] = useState<string | null>(null);
+  const [FSP, setFSP] = useState<string | null>(null);
+  const [ONTID, setONTID] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRebooting, setIsRebooting] = useState(false);
+  const [deleteCompleteModalVisible, setDeleteCompleteModalVisible] = useState(false);
 
-    const spinValue = useRef(new Animated.Value(0)).current;
-
-    const spin = spinValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
+  useEffect(() => {
+    navigation.setOptions({
+      title: 'ONU Search',
+      headerTitleStyle: { color: '#1DB954' },
     });
 
-    useEffect(() => {
-        if (isLoading) {
-            Animated.loop(
-                Animated.timing(spinValue, {
-                    toValue: 1,
-                    duration: 1500,
-                    useNativeDriver: true,
-                })
-            ).start();
-        }
-    }, [isLoading]);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
-    const handleSearch = async () => {
-        const trimmedQuery = query.trim();
-        if (!trimmedQuery) {
-            setResults([]);
-            setHasSearched(true);
-            return;
-        }
+  // SN Search hook
+  const { results, isLoading, error, searchSN, clearResults } = useSNSearch(id, token, query);
+  
+  // Optical Data hook (initialized with null values)
+  const {  opticalData, isLoading: opticalLoading, error: opticalError, fetchOpticalData, resetOpticalData } = useOpticalData(id, token, results[0]?.fsp || '', results[0]?.ontid || '');
+  
 
-        setIsLoading(true);
-        setHasSearched(true);
-        setError(null);
+  useEffect(() => {
+    if (results.length > 0 && results[0].status?.toLowerCase() !== 'offline') {
+        fetchOpticalData();  // Only fetch if status is not 'offline'
+      }
+  }, [results]);
 
-        if (searchType === 'SN') {
-            try {
-                const response = await fetch(`${apiUrl}/device/${id}/onu/search/sn`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ sn: trimmedQuery }),
-                });
+  const handleSearch = () => {
+    const trimmedSN = query.trim();
+    if (!trimmedSN || trimmedSN.length < 15 ) {
+      alert(`Please enter a valid ${searchType.toUpperCase()}`);
+      return;
+    }
+    resetOpticalData();
+    searchSN(); // Trigger the SN search when the button is pressed
+  };
 
-                if (response.status === 404) {
-                    setResults([]);
-                    setError('No matching devices found.');
-                    return;
-                }
+  const clearQuery = () => {
+    clearResults();
+    resetOpticalData();
+    setQuery('');
+    
+  };
+  const handleDelete = (snToDelete) => {
+     setSelectedSN(snToDelete);
+     setIsModalVisible(true);
+  };
 
-                if (!response.ok) {
-                    throw new Error('Request failed');
-                }
+  const handleReboot = (FSP,ONTID) => {
+    setFSP(FSP);
+    setONTID(ONTID);
+    setIsRebootingModalVisible(true);
+    clearQuery();
+    resetOpticalData();
+  };
 
-                const data = await response.json();
+  const confirmDelete = async () => {
+    if (isDeleting) return; // Prevent double tap
+    setIsDeleting(true);    // Lock the function right away
+    // setResults(prevResults => prevResults.filter(item => item.sn !== selectedSN));
+  try {
+    const API_URL = process.env.EXPO_PUBLIC_API_URL;
+    const response = await fetch(`${API_URL}/device/${id}/onu/delete`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sn: selectedSN }),
+    });
 
-                const formattedResults = data ? [{
-                    status: data.status,
-                    description: data.Description,
-                    fsp: data.FSP,
-                    sn: data.SN,
-                    ontid: data.ONTID,
-                    vendorsn: data.VendorSN,
-                    lineProfile: data.LineProfile,
-                }] : [];
+    if (response.ok) {
+      // Optional: Remove it from local state list
+      setDeleteCompleteModalVisible(true);
+    } else {
+      const error = await response.text();
+      console.error('Failed to delete:', error);
+      // Show toast or error modal if you want
+    }
+  } catch (err) {
+    console.error('Delete request failed:', err);
+  } finally {
+    setIsDeleting(false);
+    setSelectedSN(null);
+    setIsModalVisible(false);
+  }
+    // setIsModalVisible(false);
+    // setSelectedSN(null);
+  };
 
-                setResults(formattedResults);
-            } catch (err) {
-                console.error('API Error:', err);
-                setResults([]);
-                setError('An error occurred while fetching data.');
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    };
+  const cancelDelete = () => {
+    setIsModalVisible(false);
+    setSelectedSN(null);
+  };
+  const confirmReboot = async () => {
+    if (isRebooting) return; // Prevent double tap
+    setIsRebooting(true);    // Lock the function right away
+    // setResults(prevResults => prevResults.filter(item => item.sn !== selectedSN));
+  try {
+    const API_URL = process.env.EXPO_PUBLIC_API_URL;
+    const response = await fetch(`${API_URL}/device/${id}/onu/reset`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ FSP: FSP, ONTID: ONTID }),
+    });
 
-    const clearQuery = () => {
-        setQuery('');
-        setResults([]);
-        setError(null);
-        setHasSearched(false);
-        setIsLoading(false);
-    };
+    if (response.ok) {
+      console.log("Reboot request sent successfully");
+      // Optional: Remove it from local state list
+      setIsRebootingModalVisible(false);
+      
+    } else {
+      const error = await response.text();
+      console.error('Failed to Reboot:', error);
+      // Show toast or error modal if you want
+    }
+  } catch (err) {
+    console.error('Reboot request failed:', err);
+  } finally {
+    setIsRebooting(false);
+    setSelectedSN(null);
+    setIsRebootingModalVisible(false);
+  }
+    // setIsModalVisible(false);
+    // setSelectedSN(null);
+  };
+  const cancelReboot = () => {
+    setIsRebootingModalVisible(false);
+    setSelectedSN(null);
+    setONTID(null);
+    setFSP(null);
+  }
+  // Optical Data fade-in animation
+  const opticalDataOpacity = new Animated.Value(0); // Initial opacity value
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.heading}>🔍 Device Lookup</Text>
+  const fadeInOpticalData = () => {
+    Animated.timing(opticalDataOpacity, {
+      toValue: 1,
+      duration: 500,
+      easing: Easing.ease,
+      useNativeDriver: true,
+    }).start();
+  };
 
-            <View style={styles.card}>
-                <Picker
-                    selectedValue={searchType}
-                    onValueChange={setSearchType}
-                    style={styles.picker}
-                    dropdownIconColor="#1DB954"
-                >
-                    <Picker.Item label="Search by SN" value="SN" />
-                    <Picker.Item label="Search by Description" value="description" />
-                </Picker>
+  useEffect(() => {
+    if (opticalData) {
+      fadeInOpticalData(); // Trigger the fade-in effect when optical data is fetched
+    }
+  }, [opticalData]);
 
-                <TextInput
-                    style={styles.input}
-                    placeholder={`Enter ${searchType.toUpperCase()}`}
-                    placeholderTextColor="#888"
-                    value={query}
-                    onChangeText={setQuery}
-                />
+  return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Picker
+          selectedValue={searchType}
+          onValueChange={setSearchType}
+          style={styles.picker}
+          dropdownIconColor="#1DB954"
+        >
+          <Picker.Item label="Search by SN" value="SN" />
+        </Picker>
 
-                <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-                        <Text style={styles.btnText}>🚀 Search</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.clearBtn} onPress={clearQuery}>
-                        <Text style={styles.btnText}>❌ Clear</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <TextInput
+          style={styles.input}
+          placeholder={`Enter ${searchType.toUpperCase()}`}
+          placeholderTextColor="#888"
+          value={query}
+          onChangeText={setQuery}
+        />
 
-            {isLoading && (
-                <View style={styles.loadingContainer}>
-                    <Animated.View style={[styles.loadingSpinner, { transform: [{ rotate: spin }] }]}>
-                        <Text style={styles.loadingText}>🔄</Text>
-                    </Animated.View>
-                </View>
-            )}
-
-            {!isLoading && hasSearched && error && (
-                <Text style={styles.noResultsText}>🚫 {error}</Text>
-            )}
-
-            {!isLoading && results.length > 0 && (
-                <FlatList
-                    data={results}
-                    keyExtractor={(item, index) => item.id || item.sn || index.toString()}
-                    contentContainerStyle={{ paddingTop: 20 }}
-                    renderItem={({ item }) => (
-                        <View style={styles.resultItem}>
-                            <Text style={styles.resultText}>🔢 Status: <Text style={styles.highlight}>{item.status}</Text></Text>
-                            <Text style={styles.resultText}>🔢 SN: <Text style={styles.highlight}>{item.sn}</Text></Text>
-                            <Text style={styles.resultText}>📄 Description: <Text style={styles.highlight}>{item.description}</Text></Text>
-                            <Text style={styles.resultText}>🔌 FSP: <Text style={styles.highlight}>{item.fsp}</Text></Text>
-                            <Text style={styles.resultText}>💻 ONTID: <Text style={styles.highlight}>{item.ontid}</Text></Text>
-                            <Text style={styles.resultText}>🔢 VendorSN: <Text style={styles.highlight}>{item.vendorsn}</Text></Text>
-                            <Text style={styles.resultText}>🆔 Line Profile: <Text style={styles.highlight}>{item.lineProfile}</Text></Text>
-                        </View>
-                    )}
-                />
-            )}
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
+            <Text style={styles.btnText}>🚀 Search</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.clearBtn} onPress={clearQuery}>
+            <Text style={styles.btnText}>✖️ Clear</Text>
+          </TouchableOpacity>
         </View>
-    );
+      </View>
+
+      {isLoading && <Spinner message='Searching ONU'/>}
+
+      {!isLoading && error && (
+        <Text style={styles.noResultsText}>🚫 {error}</Text>
+      )}
+        
+      {!isLoading && results.length > 0 && (
+       <FlatList
+       data={results}
+       keyExtractor={(item, index) => item.id || item.sn || index.toString()}
+       renderItem={({ item }) => (
+         <View style={styles.resultItem}>
+           <View style={styles.statusContainer}>
+             <View
+               style={[
+                 styles.statusIndicator,
+                 {
+                   backgroundColor: item.status?.toLowerCase() === 'online' ? '#1DB954' : '#FF3B30', // Green for online, Red for offline
+                   transform: [{ scale: item.status ? 1.2 : 1 }],
+                 },
+               ]}
+             >
+        
+             </View>
+             <Text style={styles.statusText}>
+               {item.status?.toLowerCase() === 'online' ? 'Online' : 'Offline'}
+             </Text>
+           </View>
+     
+           <Text
+            style={[
+             styles.resultText // Red if offline
+            ]}
+          >
+            SN: <Text style={[styles.highlight, item.status?.toLowerCase() === 'offline' && { color: '#FF3B30' }]}>{item.sn}</Text>
+          </Text>
+
+          <Text
+            style={[
+             styles.resultText
+            ]}
+          >
+            Description: <Text style={[styles.highlight, item.status?.toLowerCase() === 'offline' && { color: '#FF3B30' }]}>{item.description}</Text>
+          </Text>
+
+          <Text
+            style={[
+             styles.resultText
+            ]}
+          >
+            FSP: <Text style={[styles.highlight, item.status?.toLowerCase() === 'offline' && { color: '#FF3B30' }]}>{item.fsp}</Text>
+          </Text>
+
+          <Text
+            style={[
+             styles.resultText
+            ]}
+          >
+            ONTID: <Text style={[styles.highlight, item.status?.toLowerCase() === 'offline' && { color: '#FF3B30' }]}>{item.ontid}</Text>
+          </Text>
+
+          <Text
+            style={[
+             styles.resultText
+            ]}
+          >
+            VendorSN: <Text style={[styles.highlight, item.status?.toLowerCase() === 'offline' && { color: '#FF3B30' }]}>{item.vendorsn}</Text>
+          </Text>
+
+          <Text
+            style={[
+             styles.resultText
+            ]}
+          >
+            Line Profile: <Text style={[styles.highlight, item.status?.toLowerCase() === 'offline' && { color: '#FF3B30' }]}>{item.lineProfile}</Text>
+          </Text>
+           {item.status?.toLowerCase() === 'online' && !opticalData && (
+             <View style={styles.checkingContainer}>
+               <ActivityIndicator size="small" color="#1DB954" />
+               <Text style={styles.checkingText}>Fetching Optical Power</Text>
+             </View>
+           )}
+     
+           {opticalData && (
+             <Animated.View style={[styles.opticalDataContainer, { opacity: opticalDataOpacity }]}>
+               <Text style={styles.resultText}>ONU Rx: <Text style={styles.highlight}>{opticalData.ONU_RX}</Text></Text>
+               <Text style={styles.resultText}>OLT Rx: <Text style={styles.highlight}>{opticalData.OLT_RX}</Text></Text>
+             </Animated.View>
+           )}
+           <View style={styles.actionRow}>
+           { item.status?.toLowerCase() === 'online' && (
+            <TouchableOpacity
+            onPress={() => handleReboot(item.fsp,item.ontid)}
+            style={styles.rebootButton}
+          >
+            <Text style={styles.deleteButtonText}>Reboot</Text>
+          </TouchableOpacity>
+      )}
+                 {/* Delete Button */}
+            <TouchableOpacity
+              onPress={() => handleDelete(item.sn)}
+              style={styles.deleteButton}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+            </View>
+              </View>
+       )}
+     />
+      )}
+      <RebootModal
+        isVisible={isRebootingModalVisible}
+        snToDelete={selectedSN}
+        onConfirm={confirmReboot}
+        onCancel={cancelReboot}
+      />
+            {/* Delete Confirmation Modal */}
+            <DeleteModal
+        isVisible={isModalVisible}
+        snToDelete={selectedSN}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+      {isRebooting && (
+          <Modal transparent visible>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <ActivityIndicator size="large" color="#FF3B30" />
+                <Text style={styles.modalText}>Rebooting...</Text>
+              </View>
+            </View>
+          </Modal>
+        )}
+      {isDeleting && (
+          <Modal transparent visible>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <ActivityIndicator size="large" color="#FF3B30" />
+                <Text style={styles.modalText}>Deleting...</Text>
+              </View>
+            </View>
+          </Modal>
+        )}
+        <Modal
+          transparent
+          visible={deleteCompleteModalVisible}
+          animationType="fade"
+          onRequestClose={() => setDeleteCompleteModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalText}>Deleted Successfully ✅</Text>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => {
+                  setDeleteCompleteModalVisible(false)
+                  clearResults();
+                  resetOpticalData();
+                  setQuery('');
+
+                }}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+    </View>
+    
+  );
 };
 
 const styles = StyleSheet.create({
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap', // allows wrapping if too long
+    gap: 12, // if you're using React Native >= 0.71, otherwise use margin
+    marginTop: 8,
+  },
+  
+  opticalDataContainer: {
+    backgroundColor: '#1e1e1e',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00ffffaa',
+    minWidth: 120,
+  },
+  
+  rebootButton: {
+    backgroundColor: '#ffa50033',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffa500',
+  },
+  
+  deleteButton: {
+    backgroundColor: '#ff000033',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ff0000',
+  },
+  
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },  
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#181818',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '75%',
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 15,
+    color: '#fff',
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#1DB954',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    padding: 8,
+    borderRadius: 5,
+    marginTop: 10,
+    alignSelf: 'flex-end',
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  resultItem: {
+    backgroundColor: '#181818', // Dark card background for a sleek look
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    borderColor: '#333',
+    borderWidth: 1,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    opacity: 0.9, // Slight transparency for a modern vibe
+  },
+  statusIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    transition: 'all 0.3s ease', // Smooth transition for the status indicator
+  },
+  statusSymbol: {
+    fontSize: 20,
+    color: '#fff', // White for the checkmark and cross
+    transition: 'all 0.3s ease', // Smooth scale and transform effect
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  resultText: {
+    fontSize: 16,
+    color: '#ccc',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  highlight: {
+    color: '#1DB954', // Accent green for highlights
+    fontWeight: '700',
+  },
+  checkingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#222',
+    transition: 'all 0.3s ease', // Smooth transitions for the checking container
+  },
+  checkingText: {
+    color: '#aaa',
+    marginLeft: 10,
+  },
+  opticalDataContainer: {
+    marginTop: 12,
+    backgroundColor: '#222',
+    padding: 16,
+    borderRadius: 12,
+    opacity: 0.9,
+  },
     container: {
         flex: 1,
         padding: 20,
@@ -242,6 +600,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.4,
         shadowRadius: 6,
     },
+    checkingContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 10,
+    },
     btnText: {
         color: '#fff',
         fontWeight: '600',
@@ -276,19 +639,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 30,
     },
-    loadingSpinner: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+    spinner: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         borderWidth: 4,
-        borderColor: '#1DB954',
-        borderBottomColor: 'transparent',
-        justifyContent: 'center',
-        alignItems: 'center',
+        borderTopColor: '#1DB954',
+        borderRightColor: 'transparent',
+        borderBottomColor: '#1DB954',
+        borderLeftColor: 'transparent',
+        marginBottom: 12,
     },
-    loadingText: {
-        fontSize: 24,
+    innerCircle: {
+        width: 10,
+        height: 10,
+        backgroundColor: '#1DB954',
+        borderRadius: 5,
+        position: 'absolute',
+        top: 25,
+        left: 25,
+    },
+    loadingLabel: {
         color: '#1DB954',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    opticalDataContainer: {
+        marginTop: 12,
     },
 });
 

@@ -1,12 +1,15 @@
 import { useContext, createContext, type PropsWithChildren } from 'react';
 import { useStorageState } from './useStorageState';
 import { Platform } from 'react-native';
+import { useRouter } from 'expo-router'; // assuming you're using expo-router
+
 
 const AuthContext = createContext<{
   signIn: (username: string, password: string) => void;
   signOut: () => void;
   session?: string | null;
   isLoading: boolean;
+  timestamp?: string | null;
 }>({
   signIn: () => null,
   signOut: () => null,
@@ -28,6 +31,7 @@ export function useSession() {
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState('session');
+  const [timestamp, setTimestamp] = useStorageState('timestamp');
 
   const signIn = async (username: string, password: string) => {
     try {
@@ -51,6 +55,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
       const sessionToken = data.access_token; // Adjust based on your backend response
       console.log("login",sessionToken);
       setSession(sessionToken);
+      const now = Date.now();
+      setSession(sessionToken);
+      setTimestamp(new Date(now).toISOString()); // Save human-readable timestamp
+
     } catch (error) {
       console.error('SignIn failed:', error);
     }
@@ -58,6 +66,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signOut = () => {
     setSession(null);
+    setTimestamp(null);
     console.log("session_Logout:",session);
     
   };
@@ -69,6 +78,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signOut,
         session,
         isLoading,
+        timestamp
       }}
     >
       {children}

@@ -1,6 +1,6 @@
 import { Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { useSession } from '@/context/AuthContext';
 import { Buffer } from 'buffer';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -8,9 +8,9 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function AppLayout() {
   const colorScheme = useColorScheme();
-  const { session, isLoading, signOut } = useSession();
+  const { session, isLoading, signOut,timestamp } = useSession();
   const [showDropdown, setShowDropdown] = useState(false);
-
+  
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -21,8 +21,8 @@ export default function AppLayout() {
 
   if (!session) {
     return <Redirect href="/sign-in" />;
-  }
-
+  }  
+  
   const handleAvatarPress = () => {
     setShowDropdown(prev => !prev);
   };
@@ -38,7 +38,13 @@ export default function AppLayout() {
     .map(part => Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString());
   const payload = JSON.parse(parts[1]);
   const avatarLetter = payload.sub.charAt(0).toUpperCase();
-
+  const TOKEN_EXPIRY_TIME = 4 * 60 * 60 * 1000; // 4 hours
+  const loginDate = new Date(timestamp);
+  const expiryMs = TOKEN_EXPIRY_TIME - (Date.now() - loginDate.getTime());
+  if (expiryMs <= 0) {
+    signOut(); // Already expired
+    return;
+  }
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <View style={{ flex: 1 }}>
@@ -102,7 +108,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#111622',
+    backgroundColor: '#181818',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -126,14 +132,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 70,
     right: 16,
-    backgroundColor: '#111111ee',
+    backgroundColor: '#111622',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#00ffff66',
+    borderColor: '#1DB954',
     paddingVertical: 6,
     paddingHorizontal: 12,
     zIndex: 999,
-    shadowColor: '#00ffff',
+    shadowColor: '#111622',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -145,9 +151,9 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 14,
-    color: '#00ffff',
+    color: '#1DB954',
     fontWeight: '600',
-    textShadowColor: '#00ffff77',
+    textShadowColor: '#1DB954',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 3,
   },

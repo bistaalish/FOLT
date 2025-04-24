@@ -102,8 +102,8 @@ export default function AddONU() {
     } catch (err: any) {
       setError(
         err.name === 'AbortError'
-          ? 'Timeout: Could not find ONUs within 30 seconds.'
-          : err.message || 'Something went wrong.'
+          ? 'Timeout: Could not find ONUs in OLT.'
+          : err.message || 'No ONU detected.'
       );
     } finally {
       setLoading(false);
@@ -156,7 +156,22 @@ export default function AddONU() {
           </View>
         ) : (
           <>
-            {error && <Text style={styles.errorText}>{error}</Text>}
+            {error && (
+              <View style={styles.errorContainer}>
+                <Image
+                  source={require('@/assets/images/error-glitch.png')}
+                  style={styles.errorImage}
+                  resizeMode="contain"
+                />
+                <Text style={styles.errorTitle}>No ONUs Found</Text>
+                <Text style={styles.errorSubtitle}>
+                  Something went wrong while scanning. Either no ONUs are connected or the connection timed out.
+                </Text>
+                <TouchableOpacity style={styles.retryButton} onPress={handleAutoFind}>
+                  <Text style={styles.retryButtonText}>🔄 Retry Scan</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {foundONUs.length > 0 && (
               <>
@@ -336,4 +351,50 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
   },
+  errorContainer: {
+    alignItems: 'center',
+    padding: 20,
+    marginTop: 20,
+    backgroundColor: '#181818',
+    borderRadius: 12,
+    borderColor: '#ff004040',
+    borderWidth: 1,
+    shadowColor: '#ff0040',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  errorImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 12,
+    // tintColor: '#ff0040',
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ff0040',
+    marginBottom: 8,
+  },
+  errorSubtitle: {
+    color: '#ccc',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#1DB954',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    shadowColor: '#1DB954',
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  
 });

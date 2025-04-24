@@ -22,7 +22,7 @@ export default function SignIn() {
     <>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
       <View style={styles.container}>
-        <Image source={require('@/assets/images/react-logo.png')} style={styles.logo} />
+        <Image source={require('@/assets/images/logo.jpg')} style={styles.logo} />
         <Text style={styles.title}>Welcome Back</Text>
         <TextInput
           style={styles.input}
