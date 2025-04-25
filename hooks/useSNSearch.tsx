@@ -36,7 +36,7 @@ const useSNSearch = (
 
     try {
       const response = await fetch(
-        `http://olt.linuxeval.eu.org/device/${id}/onu/search/sn`,
+        `https://olt.linuxeval.eu.org/device/${id}/onu/search/sn`,
         {
           method: 'POST',
           headers: {

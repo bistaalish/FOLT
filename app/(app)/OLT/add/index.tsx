@@ -83,7 +83,7 @@ export default function AddONU() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
 
-      const apiUrl = "http://olt.linuxeval.eu.org";
+      const apiUrl = "https://olt.linuxeval.eu.org";
       const response = await fetch(`${apiUrl}/device/${id}/onu/autofind`, {
         method: 'GET',
         headers: {

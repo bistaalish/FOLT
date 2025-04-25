@@ -88,7 +88,7 @@ const SearchScreen = () => {
     setIsDeleting(true);    // Lock the function right away
     // setResults(prevResults => prevResults.filter(item => item.sn !== selectedSN));
   try {
-    const API_URL = "http://olt.linuxeval.eu.org";
+    const API_URL = "https://olt.linuxeval.eu.org";
     const response = await fetch(`${API_URL}/device/${id}/onu/delete`, {
       method: 'DELETE',
       headers: {
@@ -125,7 +125,7 @@ const SearchScreen = () => {
     if (isRebooting) return; // Prevent double tap
     setIsRebooting(true);    // Lock the function right away
   try {
-    const API_URL = "http://olt.linuxeval.eu.org";
+    const API_URL = "https://olt.linuxeval.eu.org";
     const response = await fetch(`${API_URL}/device/${id}/onu/reset`, {
       method: 'POST',
       headers: {
