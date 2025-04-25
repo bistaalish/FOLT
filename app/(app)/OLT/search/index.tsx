@@ -8,6 +8,7 @@ import useOpticalData from '@/hooks/useOpticalData';
 import DeleteModal from '@/components/ui/DeleteModal';
 import Spinner from '@/components/ui/spinner'; // Import the Spinner component
 import RebootModal from '@/components/ui/RebootModal';
+import axios from 'axios';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
@@ -86,24 +87,21 @@ const SearchScreen = () => {
   const confirmDelete = async () => {
     if (isDeleting) return; // Prevent double tap
     setIsDeleting(true);    // Lock the function right away
-    // setResults(prevResults => prevResults.filter(item => item.sn !== selectedSN));
   try {
     const API_URL = "https://olt.linuxeval.eu.org";
-    const response = await fetch(`${API_URL}/device/${id}/onu/delete`, {
-      method: 'DELETE',
+    const response = await axios.delete(`${API_URL}/device/${id}/onu/delete`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ sn: selectedSN }),
+      data: { sn: selectedSN }, // Axios uses `data` for the request body in DELETE
     });
 
-    if (response.ok) {
+    if (response.status === 200) {
       // Optional: Remove it from local state list
       setDeleteCompleteModalVisible(true);
     } else {
-      const error = await response.text();
-      console.error('Failed to delete:', error);
+      console.error('Failed to delete:', response.data);
       // Show toast or error modal if you want
     }
   } catch (err) {
@@ -113,8 +111,6 @@ const SearchScreen = () => {
     setSelectedSN(null);
     setIsModalVisible(false);
   }
-    // setIsModalVisible(false);
-    // setSelectedSN(null);
   };
 
   const cancelDelete = () => {
@@ -124,36 +120,32 @@ const SearchScreen = () => {
   const confirmReboot = async () => {
     if (isRebooting) return; // Prevent double tap
     setIsRebooting(true);    // Lock the function right away
-  try {
-    const API_URL = "https://olt.linuxeval.eu.org";
-    const response = await fetch(`${API_URL}/device/${id}/onu/reset`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ FSP: FSP, ONTID: ONTID }),
-    });
+    try {
+      const API_URL = "https://olt.linuxeval.eu.org";
+      const response = await axios.post(
+        `${API_URL}/device/${id}/onu/reset`,
+        { FSP: FSP, ONTID: ONTID },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-    if (response.ok) {
-      console.log("Reboot request sent successfully");
-      // Optional: Remove it from local state list
+      if (response.status === 200) {
+        console.log("Reboot request sent successfully");
+        setIsRebootingModalVisible(false);
+      } else {
+        console.error('Failed to Reboot:', response.data);
+      }
+    } catch (err) {
+      console.error('Reboot request failed:', err);
+    } finally {
+      setIsRebooting(false);
+      setSelectedSN(null);
       setIsRebootingModalVisible(false);
-      
-    } else {
-      const error = await response.text();
-      console.error('Failed to Reboot:', error);
-      // Show toast or error modal if you want
     }
-  } catch (err) {
-    console.error('Reboot request failed:', err);
-  } finally {
-    setIsRebooting(false);
-    setSelectedSN(null);
-    setIsRebootingModalVisible(false);
-  }
-    // setIsModalVisible(false);
-    // setSelectedSN(null);
   };
   const cancelReboot = () => {
     setIsRebootingModalVisible(false);

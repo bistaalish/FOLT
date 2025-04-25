@@ -16,6 +16,8 @@ import { useSession } from '@/context/AuthContext';
 import ONUCard from '@/components/ui/ONUCard';
 import ONUModal from '@/components/ui/ONUAddModal';
 import ONTRegisteredModal from '@/components/ui/CustomAlert'; // Import the new modal
+import axios from 'axios'; 
+
 const vendorLogos: { [key: string]: any } = {
   hwtc: require('@/assets/images/vendors/hwtc.png'),
   // Add more logos as needed
@@ -64,46 +66,28 @@ export default function AddONU() {
     setFoundONUs([]);
     progressAnim.setValue(0);
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(progressAnim, {
-          toValue: 1,
-          duration: 3000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(progressAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 3000,
+      useNativeDriver: false,
+    }).start();
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
-
       const apiUrl = "https://olt.linuxeval.eu.org";
-      const response = await fetch(`${apiUrl}/device/${id}/onu/autofind`, {
-        method: 'GET',
+
+      const response = await axios.get(`${apiUrl}/device/${id}/onu/autofind`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        signal: controller.signal,
       });
 
-      clearTimeout(timeout);
-
-      if (!response.ok) throw new Error('Failed to autofind ONUs');
-
-      const data = await response.json();
-      setFoundONUs(data);
+      setFoundONUs(response.data);
     } catch (err: any) {
       setError(
-        err.name === 'AbortError'
-          ? 'Timeout: Could not find ONUs in OLT.'
-          : err.message || 'No ONU detected.'
+        axios.isCancel(err)
+          ? err.message
+          : err.response?.data?.message || 'No ONU detected.'
       );
     } finally {
       setLoading(false);

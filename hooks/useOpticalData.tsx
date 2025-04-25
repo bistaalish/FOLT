@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios'; 
 
 const useOpticalData = (id: string, token: string, fsp: string, ontid: string) => {
     const [opticalData, setOpticalData] = useState<{ ONU_RX: number | null; OLT_RX: number | null } | null>(null);
@@ -13,23 +14,21 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
         setOpticalData(null); // Clear previous data to trigger re-render
 
         try {
-            const response = await fetch(`https://olt.linuxeval.eu.org/device/${id}/onu/optical`, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ FSP: fsp, ONTID: ontid }),
-            });
+             // Dynamically import axios
+            const response = await axios.post(
+                `https://olt.linuxeval.eu.org/device/${id}/onu/optical`,
+                { FSP: fsp, ONTID: ontid },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch optical data');
-            }
-
-            const data = await response.json();
             setOpticalData({
-                ONU_RX: data.ONU_RX || null,
-                OLT_RX: data.OLT_RX || null,
+                ONU_RX: response.data.ONU_RX || null,
+                OLT_RX: response.data.OLT_RX || null,
             });
         } catch (err) {
             console.error('Optical Data Error:', err);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios'; 
 
 interface SNResult {
   status: string;
@@ -35,47 +36,39 @@ const useSNSearch = (
     setError(null);
 
     try {
-      const response = await fetch(
+      const response = await axios.post(
         `https://olt.linuxeval.eu.org/device/${id}/onu/search/sn`,
+        { sn: trimmedSN },
         {
-          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sn: trimmedSN }),
         }
       );
 
-      if (response.status === 404) {
+      const data = response.data;
+
+      if (response.status === 404 || !data) {
         setResults([]);
         setError('No matching devices found.');
         return;
       }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.message || 'Request failed.');
-      }
-
-      const data = await response.json();
-
-      const formattedResults: SNResult[] = data
-        ? [{
-            status: data.status,
-            description: data.Description,
-            fsp: data.FSP,
-            sn: data.SN,
-            ontid: data.ONTID,
-            vendorsn: data.VendorSN,
-            lineProfile: data.LineProfile,
-          }]
-        : [];
+      const formattedResults: SNResult[] = [{
+        status: data.status,
+        description: data.Description,
+        fsp: data.FSP,
+        sn: data.SN,
+        ontid: data.ONTID,
+        vendorsn: data.VendorSN,
+        lineProfile: data.LineProfile,
+      }];
 
       setResults(formattedResults);
     } catch (err: any) {
       console.error('API Error:', err);
-      setError(err.message || 'An error occurred while fetching data.');
+      setError(err.response?.data?.message || err.message || 'An error occurred while fetching data.');
     } finally {
       setIsLoading(false);
     }

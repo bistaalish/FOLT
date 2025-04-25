@@ -33,7 +33,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const url = 'https://olt.linuxeval.eu.org/device';
+      const url = 'https://olt.linuxeval.eu.org/device/';
       console.log('API URL:', url);
   
       const response = await axios.get(url, {

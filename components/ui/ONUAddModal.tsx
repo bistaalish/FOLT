@@ -12,7 +12,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '@/context/AuthContext';
-
+import axios from 'axios';
 interface ONUData {
   Model?: string;
   Number?: string;
@@ -91,45 +91,52 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       interface: interf,
       port,
     };
-
     try {
       setLoadingText('Checking if SN is already registered on OLT...');
       setCheckingSN(true);
 
-      const checkRes = await fetch(`${apiUrl}/device/${oltId}/onu/search/sn`, {
-        method: 'POST',
+      const checkRes = await axios.post(
+      `${apiUrl}/device/${oltId}/onu/search/sn`,
+      { sn: onu.SN },
+      {
         headers: {
-          Authorization: `Bearer ${session}`,
-          'Content-Type': 'application/json',
+        Authorization: `Bearer ${session}`,
+        'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sn: onu.SN }),
-      });
-
-      if (checkRes.ok) {
+      }
+      );
+      if (checkRes.status === 200) {
+        if (checkRes.data?.detail !== 'No ONU Found on Autofind') {
         setLoadingText('Deleting existing SN registration...');
-        await fetch(`${apiUrl}/device/${oltId}/onu/delete`, {
-          method: 'DELETE',
+        await axios.delete(`${apiUrl}/device/${oltId}/onu/delete`, {
           headers: {
             Authorization: `Bearer ${session}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ sn: onu.SN }),
+          data: { sn: onu.SN },
         });
       }
+        }
+    } catch (error) {
+      console.log('Error checking SN registration:', error);
+    }
 
+      
+    try {
       setLoadingText('Registering PON...');
-      const addRes = await fetch(`${apiUrl}/device/${oltId}/onu/add`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToAdd),
-      });
+      const addRes = await axios.post(
+        `${apiUrl}/device/${oltId}/onu/add`,
+        dataToAdd,
+        {
+          headers: {
+            Authorization: `Bearer ${session}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      if (!addRes.ok) {
-        const errData = await addRes.json();
-        throw new Error(errData?.message || 'Failed to register ONU');
+      if (addRes.status !== 201) {
+        throw new Error(addRes.data?.message || 'Failed to register ONU');
       }
 
       onAdd({
@@ -138,25 +145,26 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
         native: isNativeVLANChecked,
         onu,
       });
-    } catch (err) {
-      console.error('Error in handleAdd:', err);
-      alert(err.message || 'An unexpected error occurred.');
+    } catch (err: any) {
+      console.log('Error in handleAdd:',err);
+      // alert(err.message || 'An unexpected error occurred.');
     } finally {
       setCheckingSN(false);
+      setLoadingText('Loading...');
+      
     }
   };
 
   const fetchVLANs = async () => {
     setLoadingVlans(true);
     try {
-      const response = await fetch(`${apiUrl}/device/${oltId}/services`, {
-        method: 'GET',
+      const response = await axios.get(`${apiUrl}/device/${oltId}/services`, {
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
         },
       });
-      const data = await response.json();
+      const data = response.data;
       setVlans(data);
       if (data.length > 0) setSelectedVLAN(data[0]);
     } catch (error) {
