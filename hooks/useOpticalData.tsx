@@ -13,7 +13,7 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
         setOpticalData(null); // Clear previous data to trigger re-render
 
         try {
-            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/device/${id}/onu/optical`, {
+            const response = await fetch(`http://olt.linuxeval.eu.org/device/${id}/onu/optical`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${token}`,

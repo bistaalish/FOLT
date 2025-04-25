@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FOLT",
-    "slug": "FOLT",
+    "slug": "ohm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
-      }
+      },
+      "package": "com.bistace321.ohm"
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +37,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "41dfc058-b65d-475e-b135-46c2aeb443d9"
+      }
+    },
+    "owner": "bistace321"
   }
 }

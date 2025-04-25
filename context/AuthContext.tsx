@@ -35,7 +35,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+      const apiUrl = "http://olt.linuxeval.eu.org";
       // Perform the login API request
       const response = await fetch(`${apiUrl}/login`, {
         method: 'POST',

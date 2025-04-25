@@ -32,16 +32,20 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/device`, {
+      const url = 'http://olt.linuxeval.eu.org/device';
+      console.log('API URL:', url);
+      const response = await fetch(`${url}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
         },
       });
+      console.log('Response:', response);
       if (!response.ok) throw new Error('Failed to fetch devices');
       const data = await response.json();
       setDevices(data);
+      console.log(devices);
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -75,7 +79,7 @@ export default function Dashboard() {
         },
       });
     };
-
+    console.log(item);
     return (
       <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={handlePress}>
         <View style={styles.cardContent}>
