@@ -13,6 +13,7 @@ import {
 import { useSession } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 
 export default function Dashboard() {
   const colorScheme = useColorScheme();
@@ -34,20 +35,18 @@ export default function Dashboard() {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL;
       const url = 'http://olt.linuxeval.eu.org/device';
       console.log('API URL:', url);
-      const response = await fetch(`${url}`, {
-        method: 'GET',
+  
+      const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
         },
       });
-      console.log('Response:', response);
-      if (!response.ok) throw new Error('Failed to fetch devices');
-      const data = await response.json();
-      setDevices(data);
-      console.log(devices);
+  
+      setDevices(response.data);
+      console.log(response.data);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setLoading(false);
       setRefreshing(false);

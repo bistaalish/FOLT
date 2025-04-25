@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Text, View, TextInput, TouchableOpacity, Image, StyleSheet, StatusBar } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, Image, StyleSheet, StatusBar, Alert } from 'react-native';
 import { useState } from 'react';
 import { useSession } from '@/context/AuthContext';
 
@@ -7,16 +7,36 @@ export default function SignIn() {
   const { signIn } = useSession();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSignIn = async () => {
-    if (username && password) {
-      await signIn(username, password);
-      // Navigate after signing in. You may want to ensure sign-in is successful before navigating.
-      router.replace('/');
-    } else {
-      alert('Please enter both username and password');
+    if (!username || !password) {
+      Alert.alert('Missing Fields', 'Please enter both username and password');
+      return;
+    }
+  
+    try {
+      setLoading(true);
+      const result = await signIn(username, password);
+  
+      if (result?.error) {
+        Alert.alert('Login Failed', result.error);
+      } else {
+        router.replace('/');
+      }
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        Alert.alert('Invalid Credentials', 'Username or password is incorrect.');
+      } else if (err.message?.includes('timeout')) {
+        Alert.alert('Timeout', 'The request timed out. Please try again.');
+      } else {
+        Alert.alert('Login Error', err.message || 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   return (
     <>
@@ -30,6 +50,7 @@ export default function SignIn() {
           placeholderTextColor="#aaa"
           value={username}
           onChangeText={setUsername}
+          editable={!loading}
         />
         <TextInput
           style={styles.input}
@@ -38,9 +59,14 @@ export default function SignIn() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          editable={!loading}
         />
-        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-          <Text style={styles.buttonText}>Sign In</Text> 
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.5 }]}
+          onPress={handleSignIn}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? 'Signing In...' : 'Sign In'}</Text>
         </TouchableOpacity>
       </View>
     </>

@@ -1,8 +1,8 @@
 import { useContext, createContext, type PropsWithChildren } from 'react';
 import { useStorageState } from './useStorageState';
 import { Platform } from 'react-native';
-import { useRouter } from 'expo-router'; // assuming you're using expo-router
-
+import { useRouter } from 'expo-router';
+import axios from 'axios'; // import axios
 
 const AuthContext = createContext<{
   signIn: (username: string, password: string) => void;
@@ -17,7 +17,6 @@ const AuthContext = createContext<{
   isLoading: false,
 });
 
-// This hook can be used to access the user info.
 export function useSession() {
   const value = useContext(AuthContext);
   if (process.env.NODE_ENV !== 'production') {
@@ -36,39 +35,49 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = async (username: string, password: string) => {
     try {
       const apiUrl = "http://olt.linuxeval.eu.org";
-      // Perform the login API request
-      const response = await fetch(`${apiUrl}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          
-        },
-        body: new URLSearchParams({ username, password }).toString(),
-      });
-
-      // Check if the response is successful
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      const sessionToken = data.access_token; // Adjust based on your backend response
-      console.log("login",sessionToken);
+  
+      const response = await axios.post(
+        `${apiUrl}/login`,
+        new URLSearchParams({ username, password }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          timeout: 5000, // Optional: add timeout
+        }
+      );
+  
+      const sessionToken = response.data.access_token;
+      console.log("login", sessionToken);
+  
       setSession(sessionToken);
       const now = Date.now();
-      setSession(sessionToken);
-      setTimestamp(new Date(now).toISOString()); // Save human-readable timestamp
-
-    } catch (error) {
-      console.error('SignIn failed:', error);
+      setTimestamp(new Date(now).toISOString());
+      
+      return { success: true }; // explicitly return success if needed
+  
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          throw new Error('Invalid credentials');
+        } else if (error.code === 'ECONNABORTED') {
+          throw new Error('Request timed out');
+        } else if (error.response) {
+          throw new Error(`Login failed: ${error.response.statusText}`);
+        } else {
+          throw new Error('Network or server error');
+        }
+      } else {
+        throw new Error('An unexpected error occurred');
+      }
     }
   };
+  
 
   const signOut = () => {
     setSession(null);
     setTimestamp(null);
-    console.log("session_Logout:",session);
-    
+    console.log("session_Logout:", session);
   };
 
   return (
