@@ -57,7 +57,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   const [loadingText, setLoadingText] = useState<string>('Loading...');
   const { session } = useSession();
 
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  const apiUrl = "https://olt.linuxeval.eu.org";
 
   const handleUsernameChange = useCallback((text: string) => {
     setUsername(text);
@@ -158,7 +158,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   const fetchVLANs = async () => {
     setLoadingVlans(true);
     try {
-      const response = await axios.get(`${apiUrl}/device/${oltId}/services/`, {
+      const response = await axios.get(`${apiUrl}/device/${oltId}/services`, {
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
