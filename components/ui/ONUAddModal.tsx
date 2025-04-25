@@ -158,7 +158,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   const fetchVLANs = async () => {
     setLoadingVlans(true);
     try {
-      const response = await axios.get(`${apiUrl}/device/${oltId}/services`, {
+      const response = await axios.get(`${apiUrl}/device/${oltId}/services/`, {
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       setIsNativeVLANChecked(false);
     }
   }, [visible]);
-
+  console.log('vlans', vlans);
   return (
     <Modal visible={visible} onRequestClose={onClose} animationType="fade" transparent>
       <SafeAreaView style={styles.modalContainer}>
