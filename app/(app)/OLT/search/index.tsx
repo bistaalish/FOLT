@@ -124,7 +124,6 @@ const SearchScreen = () => {
   const confirmReboot = async () => {
     if (isRebooting) return; // Prevent double tap
     setIsRebooting(true);    // Lock the function right away
-    // setResults(prevResults => prevResults.filter(item => item.sn !== selectedSN));
   try {
     const API_URL = "http://olt.linuxeval.eu.org";
     const response = await fetch(`${API_URL}/device/${id}/onu/reset`, {
