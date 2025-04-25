@@ -34,7 +34,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const apiUrl = "http://olt.linuxeval.eu.org";
+      const apiUrl = "https://olt.linuxeval.eu.org";
   
       const response = await axios.post(
         `${apiUrl}/login`,
@@ -65,7 +65,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         } else if (error.response) {
           throw new Error(`Login failed: ${error.response.statusText}`);
         } else {
-          throw new Error('Network or server error');
+          throw new Error(`Network or server error ${error.response.statusText}`);
         }
       } else {
         throw new Error('An unexpected error occurred');
