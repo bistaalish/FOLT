@@ -42,9 +42,22 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
       });
-  
-      setDevices(response.data);
-      console.log(response.data);
+      const fetchedData = response.data
+      const updatedDevices = await Promise.all(
+        fetchedData.map(async (device) => {
+        try {
+          const response = await axios.get(`${apiUrl}/device/${device.id}/status`, {
+          headers: {
+            Authorization: `Bearer ${session}`,
+            'Content-Type': 'application/json',
+          },
+          });
+          return { ...device, status: response.data.status };
+        } catch {
+          return { ...device, status: 'offline' };
+        }
+      }));
+      setDevices(updatedDevices);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
@@ -52,10 +65,33 @@ export default function Dashboard() {
       setRefreshing(false);
     }
   };
-
-  const onRefresh = () => {
+  // const updateDeviceStatuses = async () => {
+  //   try {
+  //   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  //   const updatedDevices = await Promise.all(
+  //     devices.map(async (device) => {
+  //     try {
+  //       const response = await axios.get(`${apiUrl}/device/${device.id}/status`, {
+  //       headers: {
+  //         Authorization: `Bearer ${session}`,
+  //         'Content-Type': 'application/json',
+  //       },
+  //       });
+  //       return { ...device, status: response.data.status };
+  //     } catch {
+  //       return { ...device, status: 'offline' };
+  //     }
+  //     })
+  //   );
+  //   setDevices(updatedDevices);
+  //   console.log(updatedDevices)
+  //   } catch (err) {
+  //   console.error('Error updating device statuses:', err);
+  //   }
+  // };
+  const onRefresh = async () => {
     setRefreshing(true);
-    fetchDevices();
+    await fetchDevices();    
   };
 
   const getVendorLogo = (vendor: string) => {
@@ -66,7 +102,7 @@ export default function Dashboard() {
 
   const renderDevice = ({ item }) => {
     const logo = getVendorLogo(item.vendor);
-
+  
     const handlePress = () => {
       router.push({
         pathname: '/OLT/[id]',
@@ -78,19 +114,32 @@ export default function Dashboard() {
         },
       });
     };
-    console.log(item);
+  
+    const isOnline = item.status === 'online'; // Adjust based on your API
+  
     return (
       <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={handlePress}>
         <View style={styles.cardContent}>
           {logo && <Image source={logo} style={styles.logo} />}
+  
           <View style={styles.textColumn}>
             <Text style={styles.deviceName}>{item.name}</Text>
             <Text style={styles.vendorText}>{item.vendor}</Text>
           </View>
+  
+          {/* Status Indicator on the right */}
+          <View
+            style={[
+              styles.statusIndicator,
+              { backgroundColor: isOnline ? 'limegreen' : 'red' },
+            ]}
+          />
         </View>
       </TouchableOpacity>
     );
   };
+  
+  
 
   return (
     <>
@@ -125,6 +174,11 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between', // This pushes status to the right
+  },  
   container: {
     flex: 1,
     backgroundColor: '#121212',
@@ -172,6 +226,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#111',
     resizeMode: 'contain',
+  },
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+    alignSelf: 'center',
   },
   textColumn: {
     flex: 1,
