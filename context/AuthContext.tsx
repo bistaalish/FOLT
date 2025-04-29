@@ -34,7 +34,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const apiUrl = "https://olt.linuxeval.eu.org";
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   
       const response = await axios.post(
         `${apiUrl}/login`,

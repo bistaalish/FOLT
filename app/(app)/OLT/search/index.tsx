@@ -88,7 +88,7 @@ const SearchScreen = () => {
     if (isDeleting) return; // Prevent double tap
     setIsDeleting(true);    // Lock the function right away
   try {
-    const API_URL = "https://olt.linuxeval.eu.org";
+    const API_URL = process.env.EXPO_PUBLIC_API_URL;
     const response = await axios.delete(`${API_URL}/device/${id}/onu/delete`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ const SearchScreen = () => {
     if (isRebooting) return; // Prevent double tap
     setIsRebooting(true);    // Lock the function right away
     try {
-      const API_URL = "https://olt.linuxeval.eu.org";
+      const API_URL = process.env.EXPO_PUBLIC_API_URL;
       const response = await axios.post(
         `${API_URL}/device/${id}/onu/reset`,
         { FSP: FSP, ONTID: ONTID },
@@ -287,7 +287,6 @@ const SearchScreen = () => {
            {opticalData && (
              <Animated.View style={[styles.opticalDataContainer, { opacity: opticalDataOpacity }]}>
                <Text style={styles.resultText}>ONU Rx: <Text style={styles.highlight}>{opticalData.ONU_RX}</Text></Text>
-               <Text style={styles.resultText}>OLT Rx: <Text style={styles.highlight}>{opticalData.OLT_RX}</Text></Text>
              </Animated.View>
            )}
            <View style={styles.actionRow}>

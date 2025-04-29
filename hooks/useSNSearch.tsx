@@ -36,8 +36,9 @@ const useSNSearch = (
     setError(null);
 
     try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
       const response = await axios.post(
-        `https://olt.linuxeval.eu.org/device/${id}/onu/search/sn`,
+        `${apiUrl}/device/${id}/onu/search/sn`,
         { sn: trimmedSN },
         {
           headers: {

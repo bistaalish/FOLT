@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios'; 
 
 const useOpticalData = (id: string, token: string, fsp: string, ontid: string) => {
-    const [opticalData, setOpticalData] = useState<{ ONU_RX: number | null; OLT_RX: number | null } | null>(null);
+    const [opticalData, setOpticalData] = useState<{ ONU_RX: number | null;  } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -15,8 +15,9 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
 
         try {
              // Dynamically import axios
+            const apiUrl = process.env.EXPO_PUBLIC_API_URL;
             const response = await axios.post(
-                `https://olt.linuxeval.eu.org/device/${id}/onu/optical`,
+                `${apiUrl}/device/${id}/onu/optical`,
                 { FSP: fsp, ONTID: ontid },
                 {
                     headers: {
@@ -28,7 +29,7 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
 
             setOpticalData({
                 ONU_RX: response.data.ONU_RX || null,
-                OLT_RX: response.data.OLT_RX || null,
+                
             });
         } catch (err) {
             console.error('Optical Data Error:', err);

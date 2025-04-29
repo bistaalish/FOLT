@@ -57,7 +57,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   const [loadingText, setLoadingText] = useState<string>('Loading...');
   const { session } = useSession();
 
-  const apiUrl = "https://olt.linuxeval.eu.org";
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
   const handleUsernameChange = useCallback((text: string) => {
     setUsername(text);
