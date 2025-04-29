@@ -57,7 +57,8 @@ export default function Dashboard() {
           return { ...device, status: 'offline' };
         }
       }));
-      setDevices(updatedDevices);
+      await setDevices(updatedDevices);
+      console.log(devices)
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
@@ -65,30 +66,7 @@ export default function Dashboard() {
       setRefreshing(false);
     }
   };
-  // const updateDeviceStatuses = async () => {
-  //   try {
-  //   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  //   const updatedDevices = await Promise.all(
-  //     devices.map(async (device) => {
-  //     try {
-  //       const response = await axios.get(`${apiUrl}/device/${device.id}/status`, {
-  //       headers: {
-  //         Authorization: `Bearer ${session}`,
-  //         'Content-Type': 'application/json',
-  //       },
-  //       });
-  //       return { ...device, status: response.data.status };
-  //     } catch {
-  //       return { ...device, status: 'offline' };
-  //     }
-  //     })
-  //   );
-  //   setDevices(updatedDevices);
-  //   console.log(updatedDevices)
-  //   } catch (err) {
-  //   console.error('Error updating device statuses:', err);
-  //   }
-  // };
+  
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDevices();    
