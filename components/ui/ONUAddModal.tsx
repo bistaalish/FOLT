@@ -68,8 +68,8 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   };
 
   const handleAdd = async () => {
-    if (!username) {
-      alert('Please enter a username');
+    if (!username || username.includes(' ')) {
+      alert('Please enter a valid username without spaces');
       return;
     }
 
