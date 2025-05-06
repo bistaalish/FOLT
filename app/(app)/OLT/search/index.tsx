@@ -74,6 +74,7 @@ const SearchScreen = () => {
   const handleDelete = (snToDelete) => {
      setSelectedSN(snToDelete);
      setIsModalVisible(true);
+     resetOpticalData()
   };
 
   const handleReboot = (FSP,ONTID) => {

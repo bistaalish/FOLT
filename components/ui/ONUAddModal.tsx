@@ -8,17 +8,24 @@ import {
   StyleSheet,
   Switch,
   ActivityIndicator,
+  Animated,
+  Easing
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '@/context/AuthContext';
 import axios from 'axios';
+
+
 interface ONUData {
   Model?: string;
   Number?: string;
   SN?: string;
   FSP?: string;
   VendorID?: string;
+  ONTID?: string;
+  OLTID?: number;
+  ONU_RX: number;
 }
 
 interface ONUModalProps {
@@ -56,9 +63,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   const [checkingSN, setCheckingSN] = useState<boolean>(false);
   const [loadingText, setLoadingText] = useState<string>('Loading...');
   const { session } = useSession();
-
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
   const handleUsernameChange = useCallback((text: string) => {
     setUsername(text);
   }, []);
@@ -124,7 +129,9 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       
     try {
       setLoadingText('Registering PON...');
+      console.log(apiUrl);
       const addRes = await axios.post(
+        
         `${apiUrl}/device/${oltId}/onu/add`,
         dataToAdd,
         {
@@ -138,7 +145,8 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       if (addRes.status !== 201) {
         throw new Error(addRes.data?.message || 'Failed to register ONU');
       }
-
+      onu.ONTID = addRes.data?.ONTID
+      console.log('ONU registered data:', addRes?.data);
       onAdd({
         username,
         vlan: selectedVLAN?.vlan || null,
@@ -154,6 +162,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       
     }
   };
+
 
   const fetchVLANs = async () => {
     setLoadingVlans(true);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 
 interface ONTRegisteredModalProps {
@@ -8,6 +8,7 @@ interface ONTRegisteredModalProps {
 }
 
 const ONTRegisteredModal: React.FC<ONTRegisteredModalProps> = ({ visible, onClose, onu }) => {
+    
   return (
     <Modal
       animationType="fade"
@@ -21,7 +22,6 @@ const ONTRegisteredModal: React.FC<ONTRegisteredModalProps> = ({ visible, onClos
           <Text style={styles.modalMessage}>
             The ONU has been successfully registered.
           </Text>
-
           <View style={styles.details}>
             <Text style={styles.cardLabel}>
               <Text style={styles.label}>Number:</Text> {onu?.Number}
@@ -33,12 +33,14 @@ const ONTRegisteredModal: React.FC<ONTRegisteredModalProps> = ({ visible, onClos
               <Text style={styles.label}>FSP:</Text> {onu?.FSP}
             </Text>
             <Text style={styles.cardLabel}>
+              <Text style={styles.label}>ONTID:</Text> {onu?.ONTID}
+            </Text>
+            <Text style={styles.cardLabel}>
               <Text style={styles.label}>VendorID:</Text> {onu?.VendorID}
             </Text>
             <Text style={styles.cardLabel}>
               <Text style={styles.label}>Model:</Text> {onu?.Model}
             </Text>
-          
             <Text style={styles.cardLabel}>
                   <Text style={styles.label}>Username:</Text> {onu?.username}
             </Text>
@@ -53,6 +55,20 @@ const ONTRegisteredModal: React.FC<ONTRegisteredModalProps> = ({ visible, onClos
 };
 
 const styles = StyleSheet.create({
+  resultText: {
+    fontSize: 16,
+    color: '#ccc',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  opticalDataContainer: {
+    backgroundColor: '#1e1e1e',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00ffffaa',
+    minWidth: 120,
+  },
   overlay: {
     flex: 1,
     justifyContent: 'center',

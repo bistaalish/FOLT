@@ -35,30 +35,33 @@ export default function Dashboard() {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL;
       const url = apiUrl + '/device/';
       console.log('API URL:', url);
-  
+
       const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${session}`,
           'Content-Type': 'application/json',
         },
       });
-      const fetchedData = response.data
+      const fetchedData = response.data;
+
       const updatedDevices = await Promise.all(
         fetchedData.map(async (device) => {
-        try {
-          const response = await axios.get(`${apiUrl}/device/${device.id}/status`, {
-          headers: {
-            Authorization: `Bearer ${session}`,
-            'Content-Type': 'application/json',
-          },
-          });
-          return { ...device, status: response.data.status };
-        } catch {
-          return { ...device, status: 'offline' };
-        }
-      }));
-      await setDevices(updatedDevices);
-      console.log(devices)
+          try {
+            const statusRes = await axios.get(`${apiUrl}/device/${device.id}/status`, {
+              headers: {
+                Authorization: `Bearer ${session}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            return { ...device, status: statusRes.data.status };
+          } catch {
+            return { ...device, status: 'offline' };
+          }
+        })
+      );
+
+      setDevices(updatedDevices);
+      console.log('Updated devices:', updatedDevices);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
@@ -66,10 +69,10 @@ export default function Dashboard() {
       setRefreshing(false);
     }
   };
-  
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchDevices();    
+    await fetchDevices();
   };
 
   const getVendorLogo = (vendor: string) => {
@@ -80,7 +83,7 @@ export default function Dashboard() {
 
   const renderDevice = ({ item }) => {
     const logo = getVendorLogo(item.vendor);
-  
+
     const handlePress = () => {
       router.push({
         pathname: '/OLT/[id]',
@@ -92,20 +95,25 @@ export default function Dashboard() {
         },
       });
     };
-  
-    const isOnline = item.status === 'online'; // Adjust based on your API
-  
+
+    const isOnline = item.status === 'online';
+
     return (
-      <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={handlePress}>
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.9}
+        onPress={handlePress}
+        accessible={true}
+        accessibilityLabel={`View details for ${item.name}`}
+      >
         <View style={styles.cardContent}>
           {logo && <Image source={logo} style={styles.logo} />}
-  
+
           <View style={styles.textColumn}>
             <Text style={styles.deviceName}>{item.name}</Text>
             <Text style={styles.vendorText}>{item.vendor}</Text>
           </View>
-  
-          {/* Status Indicator on the right */}
+
           <View
             style={[
               styles.statusIndicator,
@@ -116,8 +124,6 @@ export default function Dashboard() {
       </TouchableOpacity>
     );
   };
-  
-  
 
   return (
     <>
@@ -130,6 +136,8 @@ export default function Dashboard() {
           </View>
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
+        ) : devices.length === 0 ? (
+          <Text style={styles.error}>No devices found.</Text>
         ) : (
           <FlatList
             data={devices}
@@ -145,30 +153,17 @@ export default function Dashboard() {
             contentContainerStyle={{ paddingBottom: 20 }}
           />
         )}
-
       </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // This pushes status to the right
-  },  
   container: {
     flex: 1,
     backgroundColor: '#121212',
     paddingHorizontal: 16,
     paddingTop: 60,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
-    alignSelf: 'center',
   },
   loaderContainer: {
     flex: 1,
@@ -179,6 +174,12 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 16,
     marginTop: 12,
+  },
+  error: {
+    color: 'tomato',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 30,
   },
   card: {
     backgroundColor: '#1a1a1a',
@@ -196,6 +197,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   logo: {
     width: 60,
@@ -205,15 +207,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     resizeMode: 'contain',
   },
-  statusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-    alignSelf: 'center',
-  },
   textColumn: {
     flex: 1,
+    marginRight: 10,
   },
   deviceName: {
     color: '#fff',
@@ -227,29 +223,10 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginTop: 4,
   },
-  error: {
-    color: 'tomato',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 30,
-  },
-  signOutButton: {
-    width: '100%',
-    padding: 14,
-    backgroundColor: '#1DB954',
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    alignSelf: 'center',
   },
 });

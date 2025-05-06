@@ -5,7 +5,7 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
     const [opticalData, setOpticalData] = useState<{ ONU_RX: number | null;  } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
+    console.log('Optical Data Hook:', { id, token, fsp, ontid });
     const fetchOpticalData = async () => {
         if (!fsp || !ontid) return;
 
@@ -26,8 +26,7 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
                     },
                 }
             );
-
-            setOpticalData({
+            await setOpticalData({
                 ONU_RX: response.data.ONU_RX || null,
                 
             });
@@ -38,7 +37,6 @@ const useOpticalData = (id: string, token: string, fsp: string, ontid: string) =
             setIsLoading(false);
         }
     };
-
     const resetOpticalData = () => {
         setOpticalData(null);
         setIsLoading(false);

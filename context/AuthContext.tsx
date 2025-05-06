@@ -35,7 +35,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = async (username: string, password: string) => {
     try {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  
+      console.log('API URL:', apiUrl);
       const response = await axios.post(
         `${apiUrl}/login`,
         new URLSearchParams({ username, password }),
@@ -46,14 +46,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
           timeout: 5000, // Optional: add timeout
         }
       );
-  
       const sessionToken = response.data.access_token;
       console.log("login", sessionToken);
   
       setSession(sessionToken);
       const now = Date.now();
       setTimestamp(new Date(now).toISOString());
-      
+      console.log("session_Login:", response);      
       return { success: true }; // explicitly return success if needed
   
     } catch (error: any) {
@@ -63,9 +62,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         } else if (error.code === 'ECONNABORTED') {
           throw new Error('Request timed out');
         } else if (error.response) {
-          throw new Error(`Login failed: ${error.response.statusText}`);
+          throw new Error(`Login failed: ${error.response}`);
         } else {
-          throw new Error(`Network or server error ${error.response.statusText}`);
+          throw new Error(`Network or server error ${error.response}`);
         }
       } else {
         throw new Error('An unexpected error occurred');
