@@ -22,7 +22,15 @@ const SearchScreen = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isRebootingModalVisible, setIsRebootingModalVisible] = useState(false);
   const [SearchingModal, setSearchingModal] = useState(false);
-  const [selectedSN, setSelectedSN] = useState<string | null>(null);
+  const [selectedSN, setSelectedSN] = useState<{
+      "status": string;
+      "Description": string;
+      "FSP": string;
+      "SN": string;
+      "ONTID": string;
+      "VendorSN": string;
+      "LineProfile": string;
+  }>();
   const [FSP, setFSP] = useState<string | null>(null);
   const [ONTID, setONTID] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -71,8 +79,8 @@ const SearchScreen = () => {
     setQuery('');
     
   };
-  const handleDelete = (snToDelete) => {
-     setSelectedSN(snToDelete);
+  const handleDelete = (data) => {
+     setSelectedSN(data);
      setIsModalVisible(true);
      resetOpticalData()
   };
@@ -89,13 +97,23 @@ const SearchScreen = () => {
     if (isDeleting) return; // Prevent double tap
     setIsDeleting(true);    // Lock the function right away
   try {
+    const RequestData = {
+      status: selectedSN[0].status,
+      SN : selectedSN[0].sn,
+      FSP : selectedSN[0].fsp,
+      ONTID : selectedSN[0].ontid,
+      VendorSN : selectedSN[0].vendorsn,
+      LineProfile : selectedSN[0].lineProfile,
+      Description : selectedSN[0].description,
+    };
+    console.log("Results",RequestData)
     const API_URL = process.env.EXPO_PUBLIC_API_URL;
     const response = await axios.delete(`${API_URL}/device/${id}/onu/delete`, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      data: { sn: selectedSN }, // Axios uses `data` for the request body in DELETE
+      data: RequestData, // Axios uses `data` for the request body in DELETE
     });
 
     if (response.status === 200) {
@@ -301,7 +319,7 @@ const SearchScreen = () => {
       )}
                  {/* Delete Button */}
             <TouchableOpacity
-              onPress={() => handleDelete(item.sn)}
+              onPress={() => handleDelete(results)}
               style={styles.deleteButton}
             >
               <Text style={styles.deleteButtonText}>Delete</Text>
@@ -313,7 +331,7 @@ const SearchScreen = () => {
       )}
       <RebootModal
         isVisible={isRebootingModalVisible}
-        snToDelete={selectedSN}
+        snToDelete={selectedSN?.SN}
         onConfirm={confirmReboot}
         onCancel={cancelReboot}
       />

@@ -110,17 +110,17 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
         },
       }
       );
-      if (checkRes.status === 200) {
-        if (checkRes.data?.detail !== 'No ONU Found on Autofind') {
+      console.log('Check SN response:', checkRes?.status);
+      await console.log('Check SN response:', checkRes.data);
+      if (checkRes?.status === 200) {
         setLoadingText('Deleting existing SN registration...');
         await axios.delete(`${apiUrl}/device/${oltId}/onu/delete`, {
           headers: {
             Authorization: `Bearer ${session}`,
             'Content-Type': 'application/json',
           },
-          data: { sn: onu.SN },
+          data: checkRes?.data ,
         });
-      }
         }
     } catch (error) {
       console.log('Error checking SN registration:', error);

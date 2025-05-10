@@ -19,7 +19,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isVisible, snToDelete, onConf
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalText}>
-            Are you sure you want to delete SN: {snToDelete}?
+            Are you sure you want to delete SN: {snToDelete?.sn}?
           </Text>
           <View style={styles.modalButtons}>
             <TouchableOpacity style={styles.modalButton} onPress={onConfirm}>
