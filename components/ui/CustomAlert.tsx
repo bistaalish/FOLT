@@ -24,9 +24,6 @@ const ONTRegisteredModal: React.FC<ONTRegisteredModalProps> = ({ visible, onClos
           </Text>
           <View style={styles.details}>
             <Text style={styles.cardLabel}>
-              <Text style={styles.label}>Number:</Text> {onu?.Number}
-            </Text>
-            <Text style={styles.cardLabel}>
               <Text style={styles.label}>SN:</Text> {onu?.SN}
             </Text>
             <Text style={styles.cardLabel}>
@@ -34,12 +31,6 @@ const ONTRegisteredModal: React.FC<ONTRegisteredModalProps> = ({ visible, onClos
             </Text>
             <Text style={styles.cardLabel}>
               <Text style={styles.label}>ONTID:</Text> {onu?.ONTID}
-            </Text>
-            <Text style={styles.cardLabel}>
-              <Text style={styles.label}>VendorID:</Text> {onu?.VendorID}
-            </Text>
-            <Text style={styles.cardLabel}>
-              <Text style={styles.label}>Model:</Text> {onu?.Model}
             </Text>
             <Text style={styles.cardLabel}>
                   <Text style={styles.label}>Username:</Text> {onu?.username}

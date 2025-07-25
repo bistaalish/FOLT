@@ -97,14 +97,9 @@ const SearchScreen = () => {
     if (isDeleting) return; // Prevent double tap
     setIsDeleting(true);    // Lock the function right away
   try {
+    console.log("SN",selectedSN[0].sn)
     const RequestData = {
-      status: selectedSN[0].status,
-      SN : selectedSN[0].sn,
-      FSP : selectedSN[0].fsp,
-      ONTID : selectedSN[0].ontid,
-      VendorSN : selectedSN[0].vendorsn,
-      LineProfile : selectedSN[0].lineProfile,
-      Description : selectedSN[0].description,
+      sn : selectedSN[0].sn
     };
     console.log("Results",RequestData)
     const API_URL = process.env.EXPO_PUBLIC_API_URL;

@@ -18,11 +18,9 @@ import axios from 'axios';
 
 
 interface ONUData {
-  Model?: string;
   Number?: string;
   SN?: string;
   FSP?: string;
-  VendorID?: string;
   ONTID?: string;
   OLTID?: number;
   ONU_RX: number;
@@ -99,7 +97,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
     try {
       setLoadingText('Checking if SN is already registered on OLT...');
       setCheckingSN(true);
-
+      console.log(onu.SN)
       const checkRes = await axios.post(
       `${apiUrl}/device/${oltId}/onu/search/sn`,
       { sn: onu.SN },
@@ -113,13 +111,16 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       console.log('Check SN response:', checkRes?.status);
       await console.log('Check SN response:', checkRes.data);
       if (checkRes?.status === 200) {
+         const RequestData = {
+          sn : onu.SN
+        };
         setLoadingText('Deleting existing SN registration...');
         await axios.delete(`${apiUrl}/device/${oltId}/onu/delete`, {
           headers: {
             Authorization: `Bearer ${session}`,
             'Content-Type': 'application/json',
           },
-          data: checkRes?.data ,
+          data: RequestData ,
         });
         }
     } catch (error) {
@@ -196,19 +197,10 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalContent}>
         <Text style={styles.cardLabel}>
-          <Text style={styles.label}>Number:</Text> {onu?.Number}
-        </Text>
-        <Text style={styles.cardLabel}>
           <Text style={styles.label}>SN:</Text> {onu?.SN}
         </Text>
         <Text style={styles.cardLabel}>
           <Text style={styles.label}>FSP:</Text> {onu?.FSP}
-        </Text>
-        <Text style={styles.cardLabel}>
-          <Text style={styles.label}>VendorID:</Text> {onu?.VendorID}
-        </Text>
-        <Text style={styles.cardLabel}>
-          <Text style={styles.label}>Model:</Text> {onu?.Model}
         </Text>
           <View style={styles.checkboxContainer}>
             <Text style={styles.checkboxText}>Enable Native VLAN</Text>

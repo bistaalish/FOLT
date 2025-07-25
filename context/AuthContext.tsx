@@ -34,10 +34,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL +"/login";
       console.log('API URL:', apiUrl);
+      console.log("username: " ,username)
+      console.log("password: ",password)
       const response = await axios.post(
-        `${apiUrl}/login`,
+        `${apiUrl}`,
         new URLSearchParams({ username, password }),
         {
           headers: {
@@ -46,13 +48,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
           timeout: 5000, // Optional: add timeout
         }
       );
+      console.log(response)
       const sessionToken = response.data.access_token;
       console.log("login", sessionToken);
   
       setSession(sessionToken);
       const now = Date.now();
       setTimestamp(new Date(now).toISOString());
-      console.log("session_Login:", response);      
+      // console.log("session_Login:", response);
       return { success: true }; // explicitly return success if needed
   
     } catch (error: any) {

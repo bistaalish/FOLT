@@ -34,19 +34,10 @@ export default function ONUCard({ onu, fadeAnim, onPress }: ONUCardProps) {
     >
       <View>
         <Text style={styles.cardLabel}>
-          <Text style={styles.label}>Number:</Text> {onu.Number}
-        </Text>
-        <Text style={styles.cardLabel}>
           <Text style={styles.label}>SN:</Text> {onu.SN}
         </Text>
         <Text style={styles.cardLabel}>
           <Text style={styles.label}>FSP:</Text> {onu.FSP}
-        </Text>
-        <Text style={styles.cardLabel}>
-          <Text style={styles.label}>VendorID:</Text> {onu.VendorID}
-        </Text>
-        <Text style={styles.cardLabel}>
-          <Text style={styles.label}>Model:</Text> {onu.Model}
         </Text>
       </View>
       <Image
