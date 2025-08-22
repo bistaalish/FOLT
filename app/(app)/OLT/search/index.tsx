@@ -104,6 +104,7 @@ const SearchScreen = () => {
       FSP: selectedSN[0].fsp,
       Description: selectedSN[0].description,
     };
+    console.log(RequestData)
     console.log("Results",RequestData)
     const API_URL = process.env.EXPO_PUBLIC_API_URL;
     const response = await axios.delete(`${API_URL}/device/${id}/onu/delete`, {
