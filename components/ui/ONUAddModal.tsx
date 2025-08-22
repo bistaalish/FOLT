@@ -109,13 +109,13 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
       }
       );
       console.log('Check SN response:', checkRes?.status);
-      await console.log('Check SN response:', checkRes.data);
+      await console.log('Check SN response ONTID:', checkRes.data);
       if (checkRes?.status === 200) {
          const RequestData = {
           SN : onu.SN,
-          ONTID: onu.ONTID,  
-          FSP: onu.FSP,
-          Description: username,
+          ONTID: checkRes.data?.ONTID,  
+          FSP: checkRes.data?.FSP,
+          Description: checkRes.data?.Description,
         };
         setLoadingText('Deleting existing SN registration...');
         await axios.delete(`${apiUrl}/device/${oltId}/onu/delete`, {
