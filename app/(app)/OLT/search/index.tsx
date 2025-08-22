@@ -65,7 +65,7 @@ const SearchScreen = () => {
 
   const handleSearch = () => {
     const trimmedSN = query.trim();
-    if (!trimmedSN || trimmedSN.length < 15 ) {
+    if (!trimmedSN ) {
       alert(`Please enter a valid ${searchType.toUpperCase()}`);
       return;
     }
@@ -82,7 +82,7 @@ const SearchScreen = () => {
   const handleDelete = (data) => {
      setSelectedSN(data);
      setIsModalVisible(true);
-     resetOpticalData()
+    //  resetOpticalData()
   };
 
   const handleReboot = (FSP,ONTID) => {
@@ -99,7 +99,10 @@ const SearchScreen = () => {
   try {
     console.log("SN",selectedSN[0].sn)
     const RequestData = {
-      sn : selectedSN[0].sn
+      SN : selectedSN[0].sn,
+      ONTID: selectedSN[0].ontid,
+      FSP: selectedSN[0].fsp,
+      Description: selectedSN[0].description,
     };
     console.log("Results",RequestData)
     const API_URL = process.env.EXPO_PUBLIC_API_URL;
