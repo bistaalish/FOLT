@@ -200,7 +200,7 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
   const handleCopySN = async () => {
   if (onu?.SN) {
     await Clipboard.setStringAsync(onu.SN);
-    alert('SN copied to clipboard');
+    // alert('SN copied to clipboard');
   }
 };
 
