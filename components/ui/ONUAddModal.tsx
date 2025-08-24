@@ -15,6 +15,8 @@ import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '@/context/AuthContext';
 import axios from 'axios';
+import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 
 
 interface ONUData {
@@ -195,13 +197,25 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
     }
   }, [visible]);
   console.log('vlans', vlans);
+  const handleCopySN = async () => {
+  if (onu?.SN) {
+    await Clipboard.setStringAsync(onu.SN);
+    alert('SN copied to clipboard');
+  }
+};
+
   return (
     <Modal visible={visible} onRequestClose={onClose} animationType="fade" transparent>
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalContent}>
+        <View style={styles.snRow}>
         <Text style={styles.cardLabel}>
           <Text style={styles.label}>SN:</Text> {onu?.SN}
         </Text>
+        <TouchableOpacity onPress={handleCopySN}>
+          <Ionicons name="copy-outline" size={20} color="#1DB954" style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
+      </View>
         <Text style={styles.cardLabel}>
           <Text style={styles.label}>FSP:</Text> {onu?.FSP}
         </Text>
@@ -257,6 +271,11 @@ const ONUModal: React.FC<ONUModalProps> = ({ visible, onClose, onu, onAdd, oltId
 };
 
 const styles = StyleSheet.create({
+  snRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 8,
+},
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
